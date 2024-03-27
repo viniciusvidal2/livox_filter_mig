@@ -1,0 +1,42 @@
+cmake_minimum_required(VERSION 3.0.2)
+project(lidar_filter_mig)
+
+set(CMAKE_BUILD_TYPE "Release")
+add_compile_options(-std=c++14)
+
+find_package(catkin REQUIRED COMPONENTS
+    roscpp
+    sensor_msgs
+    std_msgs
+    pcl_ros
+    tf2_ros
+    pcl_conversions
+)
+
+find_package(OpenMP REQUIRED)
+if(OPENMP_FOUND)
+  message(STATUS "OPENMP FOUND")
+  set(OpenMP_FLAGS ${OpenMP_CXX_FLAGS})
+  set(OpenMP_LIBS gomp)
+endif()
+
+catkin_package(
+#  INCLUDE_DIRS include
+#  LIBRARIES uwo_pack
+#  CATKIN_DEPENDS roscpp rospy
+#  DEPENDS system_lib
+)
+
+include_directories(
+# include
+  ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+  ${OpenMP_INCLUDE_DIRS}
+)
+
+add_executable(filter_raw_cloud_node src/filter_raw_cloud.cpp)
+target_link_libraries(filter_raw_cloud_node
+${catkin_LIBRARIES}
+${PCL_LIBRARIES}
+)
+add_dependencies(filter_raw_cloud_node ${catkin_EXPORTED_TARGETS})

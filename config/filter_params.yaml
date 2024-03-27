@@ -1,0 +1,9 @@
+raw_cloud_filter:
+    apply_filter: true
+    filter_range: true
+    filter_intensity: true
+
+    boat_length: 10.0
+    boat_width: 5.0
+    max_height: 2.0
+    min_intensity: 10
