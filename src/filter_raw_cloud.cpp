@@ -34,12 +34,12 @@ public:
       const double boat_length = params["boat_length"];
       const double boat_width = params["boat_width"];
       const double max_height = params["max_height"];
-      min_pt_range_.x = -boat_length / 2.0;
-      min_pt_range_.y = -boat_width / 2.0;
-      min_pt_range_.z = -1.0;
-      max_pt_range_.x = boat_length / 2.0;
-      max_pt_range_.y = boat_width / 2.0;
-      max_pt_range_.z = max_height;
+      negative_range_.x = -boat_length / 2.0;
+      negative_range_.y = -boat_width / 2.0;
+      negative_range_.z = -1.0;
+      positive_range_.x = boat_length / 2.0;
+      positive_range_.y = boat_width / 2.0;
+      positive_range_.z = max_height;
 
       // Set the filter flags
       filter_range_ = flags["filter_range"];
@@ -62,9 +62,12 @@ public:
     for (const auto& p : cloud_in->points) {
       // Filter by XYZ
       if (filter_range_) {
-        if (p.x < min_pt_range_.x || p.x > max_pt_range_.x ||
-            p.y < min_pt_range_.y || p.y > max_pt_range_.y ||
-            p.z < min_pt_range_.z || p.z > max_pt_range_.z) {
+        // If way to low (under water) or too high (above boat), filter out
+        if (p.x < negative_range_.z || p.x > positive_range_.z) {
+          continue;
+        }
+        // If inside a 2D box that surrounds the boat in XY plane, filter out as well
+        if (p.x > negative_range_.x && p.x < positive_range_.x && p.y > negative_range_.y && p.y < positive_range_.y) {
           continue;
         }
       }
@@ -95,7 +98,7 @@ private:
   // Raw point cloud subscriber
   ros::Subscriber cloud_sub_;
   // Filter parameters
-  pcl::PointXYZ min_pt_range_, max_pt_range_;
+  pcl::PointXYZ negative_range_, positive_range_;
   double min_intensity_;
   // Filter flags
   bool apply_filter_, filter_range_, filter_intensity_;
