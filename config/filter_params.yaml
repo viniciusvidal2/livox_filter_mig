@@ -4,8 +4,8 @@ raw_cloud_filter:
     filter_range: true
     filter_intensity: true
 
-    boat_length: 10.0
-    boat_width: 5.0
+    boat_length: 4.0
+    boat_width: 3.0
     max_height: 2.0
-    max_xy_range: 100.0
-    min_intensity: 10
+    max_xy_range: 60.0
+    min_intensity: 5
