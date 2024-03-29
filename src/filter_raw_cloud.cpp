@@ -19,7 +19,8 @@ typedef pcl::PointXYZI PointIn;
 
 class CloudFilter {
 public:
-  CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, float> &params, std::unordered_map<std::string, bool> &flags) {
+  CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, float> &params, std::unordered_map<std::string, bool> &flags) 
+  {
     apply_filter_ = flags["apply_filter"];
 
     if (flags["apply_filter"])
@@ -52,7 +53,8 @@ public:
   ~CloudFilter() {}
 
   // Cloud callback
-  void cloudCallback(const sensor_msgs::PointCloud2ConstPtr &cloud_msg){
+  void cloudCallback(const sensor_msgs::PointCloud2ConstPtr &cloud_msg)
+  {
     pcl::PointCloud<PointIn>::Ptr cloud_in (new pcl::PointCloud<PointIn>());
     pcl::fromROSMsg(*cloud_msg, *cloud_in);
     
@@ -61,24 +63,31 @@ public:
     cloud_out->points.reserve(cloud_in->points.size());
     cloud_out->header.frame_id = "livox_frame";
 
-    for (const auto& p : cloud_in->points) {
+    for (const auto& p : cloud_in->points) 
+    {
       // Filter boat points
-      if (filter_boat_points_) {
-        if (filterBoatPoints(p)) {
+      if (filter_boat_points_) 
+      {
+        if (filterBoatPoints(p)) 
+        {
           continue;
         }
       }
 
       // Filter by range
-      if (filter_range_) {
-        if (filterRange(p)) {
+      if (filter_range_) 
+      {
+        if (filterRange(p)) 
+        {
           continue;
         }
       }
 
       // Filter by intensity
-      if (filter_intensity_) {
-        if (filterIntensity(p)) {
+      if (filter_intensity_) 
+      {
+        if (filterIntensity(p)) 
+        {
           continue;
         }
       }
@@ -88,7 +97,8 @@ public:
     }
 
     // Publish the result
-    if (!cloud_out->points.empty()) {
+    if (!cloud_out->points.empty()) 
+    {
       sensor_msgs::PointCloud2 out_msg;
       out_msg.header = cloud_msg->header;
       pcl::toROSMsg(*cloud_out, out_msg);
@@ -100,13 +110,16 @@ private:
   /// @brief Filter boat points
   /// @param p Point to be filtered
   /// @return True if the point should be filtered out, false otherwise
-  const bool filterBoatPoints(const PointIn& p) {
+  const bool filterBoatPoints(const PointIn& p) 
+  {
     // If way to low (under water) or too high (above boat), filter out
-    if (p.x < negative_range_.z || p.x > positive_range_.z) {
+    if (p.x < negative_range_.z || p.x > positive_range_.z) 
+    {
       return true;
     }
     // If inside a 2D box that surrounds the boat in XY plane, filter out as well
-    if (p.x > negative_range_.x && p.x < positive_range_.x && p.y > negative_range_.y && p.y < positive_range_.y) {
+    if (p.x > negative_range_.x && p.x < positive_range_.x && p.y > negative_range_.y && p.y < positive_range_.y) 
+    {
       return true;
     }
     return false;
@@ -115,14 +128,16 @@ private:
   /// @brief Filter by range
   /// @param p Point to be filtered
   /// @return True if the point should be filtered out, false otherwise
-  const bool filterRange(const PointIn& p) {
+  const bool filterRange(const PointIn& p) 
+  {
     return std::sqrt(p.x * p.x + p.y * p.y) > max_xy_range_;
   }
 
   /// @brief Filter by intensity
   /// @param p Point to be filtered
   /// @return True if the point should be filtered out, false otherwise
-  const bool filterIntensity(const PointIn& p) {
+  const bool filterIntensity(const PointIn& p) 
+  {
     return p.intensity < min_intensity_;
   }
 
@@ -149,7 +164,8 @@ int main(int argc, char **argv)
   // Reading parameters
   bool apply_filter = false;
   np.param("/raw_cloud_filter/apply_filter", apply_filter, false);
-  if (!apply_filter) {
+  if (!apply_filter) 
+  {
     ROS_WARN("Raw point cloud filter is disabled. Exiting ...");
     return 0;
   }
