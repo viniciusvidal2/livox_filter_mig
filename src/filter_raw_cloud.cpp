@@ -64,26 +64,21 @@ public:
     for (const auto& p : cloud_in->points) {
       // Filter boat points
       if (filter_boat_points_) {
-        // If way to low (under water) or too high (above boat), filter out
-        if (p.x < negative_range_.z || p.x > positive_range_.z) {
-          continue;
-        }
-        // If inside a 2D box that surrounds the boat in XY plane, filter out as well
-        if (p.x > negative_range_.x && p.x < positive_range_.x && p.y > negative_range_.y && p.y < positive_range_.y) {
+        if (filterBoatPoints(p)) {
           continue;
         }
       }
 
       // Filter by range
       if (filter_range_) {
-        if (std::sqrt(p.x * p.x + p.y * p.y) > max_xy_range_) {
+        if (filterRange(p)) {
           continue;
         }
       }
 
       // Filter by intensity
       if (filter_intensity_) {
-        if (p.intensity < min_intensity_) {
+        if (filterIntensity(p)) {
           continue;
         }
       }
@@ -102,6 +97,35 @@ public:
   }
 
 private:
+  /// @brief Filter boat points
+  /// @param p Point to be filtered
+  /// @return True if the point should be filtered out, false otherwise
+  const bool filterBoatPoints(const PointIn& p) {
+    // If way to low (under water) or too high (above boat), filter out
+    if (p.x < negative_range_.z || p.x > positive_range_.z) {
+      return true;
+    }
+    // If inside a 2D box that surrounds the boat in XY plane, filter out as well
+    if (p.x > negative_range_.x && p.x < positive_range_.x && p.y > negative_range_.y && p.y < positive_range_.y) {
+      return true;
+    }
+    return false;
+  }
+
+  /// @brief Filter by range
+  /// @param p Point to be filtered
+  /// @return True if the point should be filtered out, false otherwise
+  const bool filterRange(const PointIn& p) {
+    return std::sqrt(p.x * p.x + p.y * p.y) > max_xy_range_;
+  }
+
+  /// @brief Filter by intensity
+  /// @param p Point to be filtered
+  /// @return True if the point should be filtered out, false otherwise
+  const bool filterIntensity(const PointIn& p) {
+    return p.intensity < min_intensity_;
+  }
+
   // Filtered point cloud publisher
   ros::Publisher cloud_pub_;
   // Raw point cloud subscriber
