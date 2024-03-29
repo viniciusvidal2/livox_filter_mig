@@ -19,7 +19,7 @@ typedef pcl::PointXYZI PointIn;
 
 class CloudFilter {
 public:
-  CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, double> &params, std::unordered_map<std::string, bool> &flags) {
+  CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, float> &params, std::unordered_map<std::string, bool> &flags) {
     apply_filter_ = flags["apply_filter"];
 
     if (flags["apply_filter"])
@@ -32,9 +32,9 @@ public:
       // Set the filter parameters
       min_intensity_ = params["min_intensity"];
       max_xy_range_ = params["max_xy_range"];
-      const double boat_length = params["boat_length"];
-      const double boat_width = params["boat_width"];
-      const double max_height = params["max_height"];
+      const float boat_length = params["boat_length"];
+      const float boat_width = params["boat_width"];
+      const float max_height = params["max_height"];
       negative_range_.x = -boat_length / 2.0;
       negative_range_.y = -boat_width / 2.0;
       negative_range_.z = -1.0;
@@ -108,7 +108,7 @@ private:
   ros::Subscriber cloud_sub_;
   // Filter parameters
   pcl::PointXYZ negative_range_, positive_range_;
-  double min_intensity_, max_xy_range_;
+  float min_intensity_, max_xy_range_;
   // Filter flags
   bool apply_filter_, filter_range_, filter_intensity_, filter_boat_points_;
 };
@@ -133,13 +133,13 @@ int main(int argc, char **argv)
   np.param("/raw_cloud_filter/filter_range", filter_range, false);
   np.param("/raw_cloud_filter/filter_intensity", filter_intensity, false);
   np.param("/raw_cloud_filter/filter_boat_points", filter_boat_points, false);
-  double boat_length, boat_width, max_height, max_xy_range;
-  np.param("/raw_cloud_filter/boat_length", boat_length, -1.0);
-  np.param("/raw_cloud_filter/boat_width", boat_width, 1.0);
-  np.param("/raw_cloud_filter/max_height", max_height, -1.0);
-  np.param("/raw_cloud_filter/max_xy_range", max_xy_range, 1000.0);
-  double min_intensity;
-  np.param("/raw_cloud_filter/min_intensity", min_intensity, 0.0);
+  float boat_length, boat_width, max_height, max_xy_range;
+  np.param("/raw_cloud_filter/boat_length", boat_length, -1.0f);
+  np.param("/raw_cloud_filter/boat_width", boat_width, 1.0f);
+  np.param("/raw_cloud_filter/max_height", max_height, -1.0f);
+  np.param("/raw_cloud_filter/max_xy_range", max_xy_range, 1000.0f);
+  float min_intensity;
+  np.param("/raw_cloud_filter/min_intensity", min_intensity, 0.0f);
 
   // Print parameters
   ROS_INFO("Applying filter: %s", apply_filter ? "true" : "false");
@@ -153,7 +153,7 @@ int main(int argc, char **argv)
   ROS_INFO("Min intensity: %.2f", min_intensity);
 
   // Create a map to store the parameters
-  std::unordered_map<std::string, double> params;
+  std::unordered_map<std::string, float> params;
   params["boat_length"] = boat_length;
   params["boat_width"] = boat_width;
   params["max_height"] = max_height;
