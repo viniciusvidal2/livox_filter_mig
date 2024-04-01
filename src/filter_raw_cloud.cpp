@@ -23,7 +23,7 @@ public:
   {
     apply_filter_ = flags["apply_filter"];
 
-    if (flags["apply_filter"])
+    if (apply_filter_)
     {
       // Subscribe to the input point cloud
       cloud_sub_ = nh.subscribe<sensor_msgs::PointCloud2>("/livox/lidar", 1, &CloudFilter::cloudCallback, this);
@@ -57,11 +57,16 @@ public:
   {
     pcl::PointCloud<PointIn>::Ptr cloud_in (new pcl::PointCloud<PointIn>());
     pcl::fromROSMsg(*cloud_msg, *cloud_in);
+
+    if (cloud_in->empty()) 
+    {
+      return;
+    }
     
-    // Output message
+    // Output point cloud
     pcl::PointCloud<PointIn>::Ptr cloud_out (new pcl::PointCloud<PointIn>());
     cloud_out->points.reserve(cloud_in->points.size());
-    cloud_out->header.frame_id = "livox_frame";
+    cloud_out->header.frame_id = cloud_msg->header.frame_id;
 
     for (const auto& p : cloud_in->points) 
     {
@@ -113,7 +118,7 @@ private:
   const bool filterBoatPoints(const PointIn& p) 
   {
     // If way to low (under water) or too high (above boat), filter out
-    if (p.x < negative_range_.z || p.x > positive_range_.z) 
+    if (p.z < negative_range_.z || p.z > positive_range_.z) 
     {
       return true;
     }
