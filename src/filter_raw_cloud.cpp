@@ -22,14 +22,15 @@ public:
   CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, float> &params, std::unordered_map<std::string, bool> &flags) 
   {
     apply_filter_ = flags["apply_filter"];
+    publish_debug_cloud_ = flags["debug_cloud"];
+
+    // Subscribe to the input point cloud
+    cloud_sub_ = nh.subscribe<sensor_msgs::PointCloud2>("/livox/lidar", 1, &CloudFilter::cloudCallback, this);
+    // Advertise the filtered point cloud
+    debug_cloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/livox/lidar_cloud_debug", 1);
 
     if (apply_filter_)
     {
-      // Subscribe to the input point cloud
-      cloud_sub_ = nh.subscribe<sensor_msgs::PointCloud2>("/livox/lidar", 1, &CloudFilter::cloudCallback, this);
-      // Advertise the filtered point cloud
-      cloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/livox/lidar_filtered", 1);
-
       // Set the filter parameters
       min_intensity_ = params["min_intensity"];
       max_xy_range_ = params["max_xy_range"];
@@ -107,7 +108,7 @@ public:
       sensor_msgs::PointCloud2 out_msg;
       out_msg.header = cloud_msg->header;
       pcl::toROSMsg(*cloud_out, out_msg);
-      cloud_pub_.publish(out_msg);
+      debug_cloud_pub_.publish(out_msg);
     }
   }
 
@@ -147,14 +148,14 @@ private:
   }
 
   // Filtered point cloud publisher
-  ros::Publisher cloud_pub_;
+  ros::Publisher debug_cloud_pub_;
   // Raw point cloud subscriber
   ros::Subscriber cloud_sub_;
   // Filter parameters
   pcl::PointXYZ negative_range_, positive_range_;
   float min_intensity_, max_xy_range_;
   // Filter flags
-  bool apply_filter_, filter_range_, filter_intensity_, filter_boat_points_;
+  bool apply_filter_, filter_range_, filter_intensity_, filter_boat_points_, publish_debug_cloud_;
 };
 
 /// MAIN
@@ -174,10 +175,11 @@ int main(int argc, char **argv)
     ROS_WARN("Raw point cloud filter is disabled. Exiting ...");
     return 0;
   }
-  bool filter_range = false, filter_intensity = false, filter_boat_points = false;
+  bool filter_range = false, filter_intensity = false, filter_boat_points = false, debug_cloud = false;
   np.param("/raw_cloud_filter/filter_range", filter_range, false);
   np.param("/raw_cloud_filter/filter_intensity", filter_intensity, false);
   np.param("/raw_cloud_filter/filter_boat_points", filter_boat_points, false);
+  np.param("/raw_cloud_filter/debug_cloud", debug_cloud, false);
   float boat_length, boat_width, max_height, max_xy_range;
   np.param("/raw_cloud_filter/boat_length", boat_length, -1.0f);
   np.param("/raw_cloud_filter/boat_width", boat_width, 1.0f);
@@ -191,6 +193,7 @@ int main(int argc, char **argv)
   ROS_INFO("Filtering boat points: %s", filter_boat_points ? "true" : "false");
   ROS_INFO("Filtering by range: %s", filter_range ? "true" : "false");
   ROS_INFO("Filtering by intensity: %s", filter_intensity ? "true" : "false");
+  ROS_INFO("Debug cloud: %s", debug_cloud ? "true" : "false");
   ROS_INFO("Boat length: %.2f", boat_length);
   ROS_INFO("Boat width: %.2f", boat_width);
   ROS_INFO("Max height: %.2f", max_height);
@@ -209,6 +212,7 @@ int main(int argc, char **argv)
   flags["filter_range"] = filter_range;
   flags["filter_boat_points"] = filter_boat_points;
   flags["filter_intensity"] = filter_intensity;
+  flags["debug_cloud"] = debug_cloud;
 
   // Create the cloud filter object
   CloudFilter cloud_filter(nh, params, flags);

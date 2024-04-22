@@ -3,6 +3,7 @@ raw_cloud_filter:
     filter_boat_points: true
     filter_range: true
     filter_intensity: true
+    debug_cloud: true
 
     boat_length: 3.0
     boat_width: 2.5
