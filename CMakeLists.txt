@@ -13,13 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
     pcl_conversions
 )
 
-find_package(OpenMP REQUIRED)
-if(OPENMP_FOUND)
-  message(STATUS "OPENMP FOUND")
-  set(OpenMP_FLAGS ${OpenMP_CXX_FLAGS})
-  set(OpenMP_LIBS gomp)
-endif()
-
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES uwo_pack
@@ -31,7 +24,6 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
-  ${OpenMP_INCLUDE_DIRS}
 )
 
 add_executable(filter_raw_cloud_node src/filter_raw_cloud.cpp src/cloud_filter.cpp)
