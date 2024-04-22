@@ -2,11 +2,11 @@
 
 <launch>
     <!-- Load the YAML file with parameters -->
-    <rosparam command="load" file="$(find lidar_filter_mig)/config/filter_params.yaml"/>
+    <rosparam command="load" file="$(find livox_filter_mig)/config/filter_params.yaml"/>
 
     <!-- Run the node -->
-    <node name="filter_raw_cloud_node" pkg="lidar_filter_mig" type="filter_raw_cloud_node" output="screen"/>
+    <node name="filter_raw_cloud_node" pkg="livox_filter_mig" type="filter_raw_cloud_node" output="screen"/>
 
     <!-- Launch RViz with config -->
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find lidar_filter_mig)/config/rviz_config.rviz" output="screen"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find livox_filter_mig)/config/rviz_config.rviz" output="screen"/>
 </launch>

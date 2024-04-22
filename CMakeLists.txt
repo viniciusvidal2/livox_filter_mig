@@ -28,13 +28,13 @@ catkin_package(
 )
 
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${OpenMP_INCLUDE_DIRS}
 )
 
-add_executable(filter_raw_cloud_node src/filter_raw_cloud.cpp)
+add_executable(filter_raw_cloud_node src/filter_raw_cloud.cpp src/cloud_filter.cpp)
 target_link_libraries(filter_raw_cloud_node
 ${catkin_LIBRARIES}
 ${PCL_LIBRARIES}
