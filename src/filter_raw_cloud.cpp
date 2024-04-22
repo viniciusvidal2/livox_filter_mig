@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/LaserScan.h>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
@@ -27,7 +28,14 @@ public:
     // Subscribe to the input point cloud
     cloud_sub_ = nh.subscribe<sensor_msgs::PointCloud2>("/livox/lidar", 1, &CloudFilter::cloudCallback, this);
     // Advertise the filtered point cloud
-    debug_cloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/livox/lidar_cloud_debug", 1);
+    if (publish_debug_cloud_)
+    {
+      debug_cloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/livox/lidar_cloud_debug", 1);
+    }
+    out_scan_pub_ = nh.advertise<sensor_msgs::LaserScan>("/livox/scan", 1);
+
+    // Convertion from point cloud to scan
+    angle_resolution_ = params["angle_resolution"]*M_PI/180.0f; // [rad]
 
     if (apply_filter_)
     {
@@ -63,14 +71,40 @@ public:
     {
       return;
     }
+
+    // Check if we are applying the filter at all
+    if (!apply_filter_) 
+    {
+      if (publish_debug_cloud_) 
+      {
+        debug_cloud_pub_.publish(*cloud_msg);
+      }
+
+      return;
+    }
     
-    // Output point cloud
+    // Output debug point cloud
     pcl::PointCloud<PointIn>::Ptr cloud_out (new pcl::PointCloud<PointIn>());
     cloud_out->points.reserve(cloud_in->points.size());
     cloud_out->header.frame_id = cloud_msg->header.frame_id;
+    // Output laser scan
+    sensor_msgs::LaserScan scan_out;
+    scan_out.header = cloud_msg->header;
+    scan_out.scan_time = 0.1; // 10 Hz
 
+    // Work on the input point cloud
+    std::vector<float> ranges, intensities, angles;
+    ranges.reserve(cloud_in->points.size());
+    intensities.reserve(cloud_in->points.size());
+    angles.reserve(cloud_in->points.size());
     for (const auto& p : cloud_in->points) 
     {
+      // Filter Z values that are out of possible boat collision
+      if (p.z < negative_range_.z || p.z > positive_range_.z) 
+      {
+        continue;
+      }
+
       // Filter boat points
       if (filter_boat_points_) 
       {
@@ -98,31 +132,117 @@ public:
         }
       }
 
-      // Add the point to the output cloud
-      cloud_out->points.emplace_back(p);
+      // Calculate the angle and range of the point
+      // Z positive, X forward, Y left
+      // 0 rad is forward (X), positive is counter-clockwise
+      const float angle = std::atan2(p.y, p.x);
+      const float range = std::sqrt(p.x * p.x + p.y * p.y);
+      
+      // Fill the output laser scan candidates
+      angles.emplace_back(angle);
+      ranges.emplace_back(range);
+      intensities.emplace_back(p.intensity);
+
+      // Add the point to the debug cloud
+      if (publish_debug_cloud_) 
+      {
+        cloud_out->points.emplace_back(p);
+      }
     }
 
-    // Publish the result
-    if (!cloud_out->points.empty()) 
+    // Publish the debug cloud
+    if (!cloud_out->points.empty() && publish_debug_cloud_) 
     {
       sensor_msgs::PointCloud2 out_msg;
       out_msg.header = cloud_msg->header;
       pcl::toROSMsg(*cloud_out, out_msg);
       debug_cloud_pub_.publish(out_msg);
     }
+
+    // Prapare the output laser scan values according to angle resolution
+    if (!ranges.empty()) 
+    {
+      std::pair<float, float> min_max_range, min_max_angle;
+      filterRangeAndIntensityVectors(ranges, intensities, angles, min_max_range, min_max_angle);
+
+      // Publish the output laser scan
+      scan_out.time_increment = scan_out.scan_time/static_cast<float>(ranges.size() - 1);
+      scan_out.angle_min = min_max_angle.first;
+      scan_out.angle_max = min_max_angle.second;
+      scan_out.angle_increment = angle_resolution_;
+      scan_out.range_min = min_max_range.first;
+      scan_out.range_max = min_max_range.second;
+      scan_out.ranges = ranges;
+      scan_out.intensities = intensities;
+      out_scan_pub_.publish(scan_out);
+    }
   }
 
 private:
+  /// @brief Filter range and intensity vectors based on the angle resolution
+  /// @param ranges Vector of ranges
+  /// @param intensities Vector of intensities
+  /// @param angles Vector of angles
+  /// @param min_max_range Min and max range values
+  /// @param min_max_angle Min and max angle values
+  void filterRangeAndIntensityVectors(std::vector<float>& ranges, std::vector<float>& intensities, std::vector<float>& angles, 
+                        std::pair<float, float>& min_max_range, std::pair<float, float>& min_max_angle) 
+  {
+    // Sort the ranges and intensities based on the angles
+    std::vector<std::pair<float, std::pair<float, float>>> angles_ranges_intensities;
+    for (size_t i = 0; i < ranges.size(); ++i) 
+    {
+      angles_ranges_intensities.emplace_back(std::make_pair(angles[i], std::make_pair(ranges[i], intensities[i])));
+    }
+    std::sort(angles_ranges_intensities.begin(), angles_ranges_intensities.end(), 
+    [](const std::pair<float, std::pair<float, float>>& a, const std::pair<float, std::pair<float, float>>& b)
+     { return a.first < b.first; });
+
+    // Refill the original vectors with the sorted values
+    for (std::size_t i = 0; i < angles_ranges_intensities.size(); ++i) 
+    {
+      angles[i] = angles_ranges_intensities[i].first;
+      ranges[i] = angles_ranges_intensities[i].second.first;
+      intensities[i] = angles_ranges_intensities[i].second.second;
+    }
+
+    // Filter the ranges and intensities based on the angle resolution
+    std::vector<float> filtered_ranges, filtered_intensities;
+    filtered_ranges.reserve(ranges.size());
+    filtered_intensities.reserve(intensities.size());
+    float current_angle = angles[0], min_range = 1e6, max_range = -1e6;
+    for (std::size_t i = 1; i < angles.size(); ++i) 
+    {
+      if (angles[i] - current_angle >= angle_resolution_) 
+      {
+        filtered_ranges.emplace_back(ranges[i]);
+        filtered_intensities.emplace_back(intensities[i]);
+        current_angle += angle_resolution_;
+        if (ranges[i] < min_range) 
+        {
+          min_range = ranges[i];
+        }
+        if (ranges[i] > max_range) 
+        {
+          max_range = ranges[i];
+        }
+      }
+    }
+
+    // Fill the minimum and maximum range values
+    min_max_range = std::make_pair(min_range, max_range);
+    min_max_angle = std::make_pair(angles.front(), current_angle - angle_resolution_);
+
+    // Update the original vectors
+    ranges = filtered_ranges;
+    intensities = filtered_intensities;
+  }
+
   /// @brief Filter boat points
   /// @param p Point to be filtered
   /// @return True if the point should be filtered out, false otherwise
   const bool filterBoatPoints(const PointIn& p) 
   {
-    // If way to low (under water) or too high (above boat), filter out
-    if (p.z < negative_range_.z || p.z > positive_range_.z) 
-    {
-      return true;
-    }
     // If inside a 2D box that surrounds the boat in XY plane, filter out as well
     if (p.x > negative_range_.x && p.x < positive_range_.x && p.y > negative_range_.y && p.y < positive_range_.y) 
     {
@@ -148,12 +268,14 @@ private:
   }
 
   // Filtered point cloud publisher
-  ros::Publisher debug_cloud_pub_;
+  ros::Publisher debug_cloud_pub_, out_scan_pub_;
   // Raw point cloud subscriber
   ros::Subscriber cloud_sub_;
   // Filter parameters
-  pcl::PointXYZ negative_range_, positive_range_;
-  float min_intensity_, max_xy_range_;
+  pcl::PointXYZ negative_range_, positive_range_; // [m]
+  float min_intensity_; // [units]
+  float max_xy_range_; // [m]
+  float angle_resolution_; // [rad]
   // Filter flags
   bool apply_filter_, filter_range_, filter_intensity_, filter_boat_points_, publish_debug_cloud_;
 };
@@ -187,6 +309,8 @@ int main(int argc, char **argv)
   np.param("/raw_cloud_filter/max_xy_range", max_xy_range, 1000.0f);
   float min_intensity;
   np.param("/raw_cloud_filter/min_intensity", min_intensity, 0.0f);
+  float angle_resolution; // [deg]
+  np.param("/pointcloud2scan/angle_resolution", angle_resolution, 1.0f);
 
   // Print parameters
   ROS_INFO("Applying filter: %s", apply_filter ? "true" : "false");
@@ -194,11 +318,12 @@ int main(int argc, char **argv)
   ROS_INFO("Filtering by range: %s", filter_range ? "true" : "false");
   ROS_INFO("Filtering by intensity: %s", filter_intensity ? "true" : "false");
   ROS_INFO("Debug cloud: %s", debug_cloud ? "true" : "false");
-  ROS_INFO("Boat length: %.2f", boat_length);
-  ROS_INFO("Boat width: %.2f", boat_width);
-  ROS_INFO("Max height: %.2f", max_height);
-  ROS_INFO("Max XY range: %.2f", max_xy_range);
-  ROS_INFO("Min intensity: %.2f", min_intensity);
+  ROS_INFO("Boat length: %.2f meters", boat_length);
+  ROS_INFO("Boat width: %.2f meters", boat_width);
+  ROS_INFO("Max height: %.2f meters", max_height);
+  ROS_INFO("Max XY range: %.2f meters", max_xy_range);
+  ROS_INFO("Min intensity: %.2f units", min_intensity);
+  ROS_INFO("Angle resolution: %.2f degrees", angle_resolution);
 
   // Create a map to store the parameters
   std::unordered_map<std::string, float> params;
@@ -207,6 +332,7 @@ int main(int argc, char **argv)
   params["max_height"] = max_height;
   params["max_xy_range"] = max_xy_range;
   params["min_intensity"] = min_intensity;
+  params["angle_resolution"] = angle_resolution;
   std::unordered_map<std::string, bool> flags;
   flags["apply_filter"] = apply_filter;
   flags["filter_range"] = filter_range;
