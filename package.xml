@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>lidar_filter_mig</name>
+  <name>livox_filter_mig</name>
   <version>0.1.0</version>
-  <description>The lidar_filter_mig package</description>
+  <description>The livox_filter_mig package</description>
 
   <maintainer email="vinicius@todo.todo">vinicius</maintainer>
 
