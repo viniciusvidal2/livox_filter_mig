@@ -143,6 +143,10 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
     {
         std::pair<float, float> min_max_range, min_max_angle;
         filterRangeAndIntensityVectors(ranges, intensities, angles, min_max_range, min_max_angle);
+        if (ranges.size() < 3)
+        {
+            return;
+        }
 
         // Publish the output laser scan
         scan_out.time_increment = scan_out.scan_time/static_cast<float>(ranges.size() - 1);
