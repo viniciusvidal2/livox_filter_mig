@@ -1,7 +1,8 @@
 #include "cloud_filter.h"
 
 
-CloudFilter::CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, float> &params, std::unordered_map<std::string, bool> &flags) 
+CloudFilter::CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, float> &params, std::unordered_map<std::string, bool> &flags,
+                        std::unordered_map<std::string, std::string> &frames) 
 {
     apply_filter_ = flags["apply_filter"];
     publish_debug_cloud_ = flags["debug_cloud"];
@@ -17,6 +18,24 @@ CloudFilter::CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, fl
 
     // Convertion from point cloud to scan
     angle_resolution_ = params["angle_resolution"]*M_PI/180.0f; // [rad]
+
+    // Input and and output frames variables
+    in_frame_ = frames["in_frame"];
+    out_frame_ = frames["out_frame"];
+    x_in_out_ = params["x_in_out"];
+    y_in_out_ = params["y_in_out"];
+    z_in_out_ = params["z_in_out"];
+    roll_in_out_ = params["roll_in_out"];
+    pitch_in_out_ = params["pitch_in_out"];
+    yaw_in_out_ = params["yaw_in_out"];
+    // Create homogeneous matrix from the relative pose
+    Eigen::Matrix3f out_R_in = (Eigen::AngleAxisf(roll_in_out_, Eigen::Vector3f::UnitX())
+                        * Eigen::AngleAxisf(pitch_in_out_, Eigen::Vector3f::UnitY())
+                        * Eigen::AngleAxisf(yaw_in_out_, Eigen::Vector3f::UnitZ())).toRotationMatrix();
+    out_T_in_ << out_R_in(0, 0), out_R_in(0, 1), out_R_in(0, 2), x_in_out_,
+                out_R_in(1, 0), out_R_in(1, 1), out_R_in(1, 2), y_in_out_,
+                out_R_in(2, 0), out_R_in(2, 1), out_R_in(2, 2), z_in_out_,
+                0.0, 0.0, 0.0, 1.0;
 
     if (apply_filter_)
     {
@@ -50,25 +69,15 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
     {
         return;
     }
-
-    // Check if we are applying the filter at all
-    if (!apply_filter_) 
-    {
-        if (publish_debug_cloud_) 
-        {
-            debug_cloud_pub_.publish(*cloud_msg);
-        }
-
-        return;
-    }
     
     // Output debug point cloud
     pcl::PointCloud<PointIn>::Ptr cloud_out (new pcl::PointCloud<PointIn>());
     cloud_out->points.reserve(cloud_in->points.size());
-    cloud_out->header.frame_id = cloud_msg->header.frame_id;
+    cloud_out->header.frame_id = out_frame_;
     // Output laser scan
     sensor_msgs::LaserScan scan_out;
-    scan_out.header = cloud_msg->header;
+    scan_out.header.stamp = cloud_msg->header.stamp;
+    scan_out.header.frame_id = out_frame_;
     scan_out.scan_time = 0.1; // 10 Hz
 
     // Work on the input point cloud
@@ -85,7 +94,7 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
         }
 
         // Filter boat points
-        if (filter_boat_points_) 
+        if (apply_filter_ && filter_boat_points_) 
         {
             if (filterBoatPoints(p)) 
             {
@@ -94,7 +103,7 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
         }
 
         // Filter by range
-        if (filter_range_) 
+        if (apply_filter_ && filter_range_) 
         {
             if (filterRange(p)) 
             {
@@ -103,7 +112,7 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
         }
 
         // Filter by intensity
-        if (filter_intensity_) 
+        if (apply_filter_ && filter_intensity_) 
         {
             if (filterIntensity(p)) 
             {
@@ -111,11 +120,15 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
             }
         }
 
+        // Apply the relative pose transformation
+        const Eigen::Vector4f p_in(p.x, p.y, p.z, 1.0);
+        const Eigen::Vector4f p_out = out_T_in_ * p_in;
+        
         // Calculate the angle and range of the point
         // Z positive, X forward, Y left
         // 0 rad is forward (X), positive is counter-clockwise
-        const float angle = std::atan2(p.y, p.x);
-        const float range = std::sqrt(p.x * p.x + p.y * p.y);
+        const float angle = std::atan2(p_out.y(), p_out.x());
+        const float range = std::sqrt(p_out.x()*p_out.x() + p_out.y()*p_out.y());
         
         // Fill the output laser scan candidates
         angles.emplace_back(angle);
@@ -125,7 +138,12 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
         // Add the point to the debug cloud
         if (publish_debug_cloud_) 
         {
-            cloud_out->points.emplace_back(p);
+            PointIn p_out_pcl;
+            p_out_pcl.x = p_out.x();
+            p_out_pcl.y = p_out.y();
+            p_out_pcl.z = p_out.z();
+            p_out_pcl.intensity = p.intensity;
+            cloud_out->points.emplace_back(p_out_pcl);
         }
     }
 
@@ -143,23 +161,21 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
     {
         std::pair<float, float> min_max_range, min_max_angle;
         filterRangeAndIntensityVectors(ranges, intensities, angles, min_max_range, min_max_angle);
-        if (ranges.size() < 3)
+        if (ranges.size() > 3)
         {
-            return;
+            // Publish the output laser scan
+            scan_out.time_increment = scan_out.scan_time/static_cast<float>(ranges.size() - 1);
+            scan_out.angle_min = min_max_angle.first;
+            scan_out.angle_max = min_max_angle.second;
+            scan_out.angle_increment = angle_resolution_;
+            scan_out.range_min = min_max_range.first;
+            scan_out.range_max = min_max_range.second;
+            scan_out.ranges = ranges;
+            scan_out.intensities = intensities;
+            out_scan_pub_.publish(scan_out);
         }
-
-        // Publish the output laser scan
-        scan_out.time_increment = scan_out.scan_time/static_cast<float>(ranges.size() - 1);
-        scan_out.angle_min = min_max_angle.first;
-        scan_out.angle_max = min_max_angle.second;
-        scan_out.angle_increment = angle_resolution_;
-        scan_out.range_min = min_max_range.first;
-        scan_out.range_max = min_max_range.second;
-        scan_out.ranges = ranges;
-        scan_out.intensities = intensities;
-        out_scan_pub_.publish(scan_out);
     }
-  }
+}
 
 void CloudFilter::filterRangeAndIntensityVectors(std::vector<float>& ranges, std::vector<float>& intensities, std::vector<float>& angles, 
                         std::pair<float, float>& min_max_range, std::pair<float, float>& min_max_angle) 

@@ -24,7 +24,8 @@ typedef pcl::PointXYZI PointIn;
 class CloudFilter 
 {
 public:
-    CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, float> &params, std::unordered_map<std::string, bool> &flags) ;
+    CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, float> &params, std::unordered_map<std::string, bool> &flags,
+                std::unordered_map<std::string, std::string> &frames) ;
 
     ~CloudFilter() = default;
 
@@ -67,5 +68,9 @@ private:
     float angle_resolution_; // [rad]
     // Filter flags
     bool apply_filter_, filter_range_, filter_intensity_, filter_boat_points_, publish_debug_cloud_;
+    // Frames
+    std::string in_frame_, out_frame_;
+    float x_in_out_, y_in_out_, z_in_out_, roll_in_out_, pitch_in_out_, yaw_in_out_;
+    Eigen::Matrix4f out_T_in_;
 };
 #endif // CLOUDFILTER_H

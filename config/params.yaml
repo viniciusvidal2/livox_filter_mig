@@ -1,0 +1,25 @@
+raw_cloud_filter:
+    apply_filter: true
+    filter_boat_points: false
+    filter_range: false
+    filter_intensity: false
+    debug_cloud: true
+
+    boat_length: 3.0 # meters
+    boat_width: 2.5 # meters
+    max_height: 1.5 # meters
+    max_xy_range: 60.0 # meters
+    min_intensity: 5
+
+pointcloud2scan:
+    angle_resolution: 0.5 # degrees 
+
+relative_pose:
+    input_frame: "livox_frame"
+    output_frame: "base_link"
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
