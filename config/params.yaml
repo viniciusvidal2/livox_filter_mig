@@ -14,8 +14,18 @@ raw_cloud_filter:
 pointcloud2scan:
     angle_resolution: 0.5 # degrees 
 
-relative_pose:
+livox2scan:
     input_frame: "livox_frame"
+    output_frame: "base_link"
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    roll: 0.0
+    pitch: 0.0
+    yaw: 0.0
+
+ping2scan:
+    input_frame: "ping_frame"
     output_frame: "base_link"
     x: 0.0
     y: 0.0
