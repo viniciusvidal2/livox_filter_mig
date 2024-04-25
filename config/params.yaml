@@ -12,7 +12,7 @@ raw_cloud_filter:
     min_intensity: 5
 
 pointcloud2scan:
-    angle_resolution: 0.5 # degrees 
+    angle_resolution: 1.0 # degrees 
 
 livox2scan:
     input_frame: "livox_frame"
