@@ -97,6 +97,35 @@ sensor_msgs::LaserScan LaserScanFilter::transformScan(const sensor_msgs::LaserSc
 
 void LaserScanFilter::mergeScans(const sensor_msgs::LaserScan& ping_msg, const sensor_msgs::LaserScan& livox_msg, sensor_msgs::LaserScan& output_msg)
 {
-    // TODO: Implement the merge of the ping and livox scans with the same angle step and range with mid360
-    return;
+    // If not the same size, just return the livox message
+    if (ping_msg.ranges.size() != livox_msg.ranges.size())
+    {
+        output_msg = livox_msg;
+        return;
+    }
+    
+    // Assuming that both messages have the same number of ranges, merge the scans by always getting the closest non zero reading
+    for (int i = 0; i < static_cast<int>(ping_msg.ranges.size()); ++i)
+    {
+        // Check if one the the values is either inf or nan
+        if (std::isinf(ping_msg.ranges[i]) || std::isnan(ping_msg.ranges[i]))
+        {
+            output_msg.ranges[i] = (std::isinf(livox_msg.ranges[i]) || std::isnan(livox_msg.ranges[i])) ? 0.0 : livox_msg.ranges[i];
+        }
+        else if (std::isinf(livox_msg.ranges[i]) || std::isnan(livox_msg.ranges[i]))
+        {
+            output_msg.ranges[i] = ping_msg.ranges[i];
+        }
+        // If non zero values, compare, and get the closest
+        std::vector<float> ranges;
+        if (livox_msg.ranges[i] != 0.0)
+        {
+            ranges.push_back(livox_msg.ranges[i]);
+        }
+        if (ping_msg.ranges[i] != 0.0)
+        {
+            ranges.push_back(ping_msg.ranges[i]);
+        }
+        output_msg.ranges[i] = ranges.size() > 0 ? *std::min_element(ranges.begin(), ranges.end()) : 0.0f;
+    }
 }
