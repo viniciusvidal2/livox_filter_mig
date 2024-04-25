@@ -71,8 +71,28 @@ void LaserScanFilter::livoxCallback(const sensor_msgs::LaserScanConstPtr &livox_
 
 sensor_msgs::LaserScan LaserScanFilter::transformScan(const sensor_msgs::LaserScan& scan)
 {
-    // TODO: implement the scan transformation converting from scan - 2D - scan
-    return scan;
+    // If there is no transform, just return the input scan
+    if (scan_T_ping_ == Eigen::Matrix4f::Identity())
+    {
+        return scan;
+    }
+
+    sensor_msgs::LaserScan transformed_scan = scan;
+    // For each range value, apply the offset in 2D - XY
+    for (int i = 0; i < static_cast<int>(scan.ranges.size()); ++i)
+    {
+        // Calculate the angle of the range
+        const float angle = scan.angle_min + i*scan.angle_increment;
+        // Apply the offset in 2D
+        const float x = scan.ranges[i]*std::cos(angle);
+        const float y = scan.ranges[i]*std::sin(angle);
+        // Apply the transformation
+        const Eigen::Vector4f transformed_point = scan_T_ping_*Eigen::Vector4f(x, y, 0.0, 1.0);
+        // Update the range value
+        transformed_scan.ranges[i] = std::sqrt(transformed_point.x()*transformed_point.x() + transformed_point.y()*transformed_point.y());
+    }
+
+    return transformed_scan;
 }
 
 void LaserScanFilter::mergeScans(const sensor_msgs::LaserScan& ping_msg, const sensor_msgs::LaserScan& livox_msg, sensor_msgs::LaserScan& output_msg)
