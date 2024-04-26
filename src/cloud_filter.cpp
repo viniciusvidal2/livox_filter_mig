@@ -159,17 +159,16 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
     // Prapare the output laser scan values according to angle resolution
     if (!ranges.empty()) 
     {
-        std::pair<float, float> min_max_range, min_max_angle;
-        filterRangeAndIntensityVectors(ranges, intensities, angles, min_max_range, min_max_angle);
+        filterRangeAndIntensityVectors(ranges, intensities, angles);
         if (ranges.size() > 3)
         {
             // Publish the output laser scan
             scan_out.time_increment = scan_out.scan_time/static_cast<float>(ranges.size() - 1);
-            scan_out.angle_min = min_max_angle.first;
-            scan_out.angle_max = min_max_angle.second;
+            scan_out.angle_min = min_scan_angle_;
+            scan_out.angle_max = max_scan_angle_;
             scan_out.angle_increment = angle_resolution_;
-            scan_out.range_min = min_max_range.first;
-            scan_out.range_max = min_max_range.second;
+            scan_out.range_min = filter_boat_points_ ? negative_range_.y : 0.0f;
+            scan_out.range_max = filter_range_ ? max_xy_range_ : 100.0f;
             scan_out.ranges = ranges;
             scan_out.intensities = intensities;
             out_scan_pub_.publish(scan_out);
@@ -177,8 +176,7 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
     }
 }
 
-void CloudFilter::filterRangeAndIntensityVectors(std::vector<float>& ranges, std::vector<float>& intensities, std::vector<float>& angles, 
-                        std::pair<float, float>& min_max_range, std::pair<float, float>& min_max_angle) 
+void CloudFilter::filterRangeAndIntensityVectors(std::vector<float>& ranges, std::vector<float>& intensities, std::vector<float>& angles) 
 {
     // Sort the ranges and intensities based on the angles
     std::vector<std::pair<float, std::pair<float, float>>> angles_ranges_intensities;
@@ -190,40 +188,22 @@ void CloudFilter::filterRangeAndIntensityVectors(std::vector<float>& ranges, std
     [](const std::pair<float, std::pair<float, float>>& a, const std::pair<float, std::pair<float, float>>& b)
      { return a.first < b.first; });
 
-    // Refill the original vectors with the sorted values
+    // Filter the ranges and intensities based on the angle resolution
+    std::size_t n_readings = static_cast<std::size_t>((max_scan_angle_ - min_scan_angle_) / angle_resolution_);
+    std::vector<float> filtered_ranges(n_readings), filtered_intensities(n_readings);
+    float current_angle = min_scan_angle_;
     for (std::size_t i = 0; i < angles_ranges_intensities.size(); ++i) 
     {
-        angles[i] = angles_ranges_intensities[i].first;
-        ranges[i] = angles_ranges_intensities[i].second.first;
-        intensities[i] = angles_ranges_intensities[i].second.second;
-    }
-
-    // Filter the ranges and intensities based on the angle resolution
-    std::vector<float> filtered_ranges, filtered_intensities;
-    filtered_ranges.reserve(ranges.size());
-    filtered_intensities.reserve(intensities.size());
-    float current_angle = angles[0], min_range = 1e6, max_range = -1e6;
-    for (std::size_t i = 1; i < angles.size(); ++i) 
-    {
-        if (angles[i] - current_angle >= angle_resolution_) 
+        std::size_t angle_index = static_cast<std::size_t>(angles_ranges_intensities[i].first / angle_resolution_);
+        if (angle_index < n_readings) 
         {
-            filtered_ranges.emplace_back(ranges[i]);
-            filtered_intensities.emplace_back(intensities[i]);
-            current_angle += angle_resolution_;
-            if (ranges[i] < min_range) 
+            if (angles_ranges_intensities[angle_index].first == 0.0f)
             {
-                min_range = ranges[i];
-            }
-            if (ranges[i] > max_range) 
-            {
-                max_range = ranges[i];
+                filtered_ranges[angle_index] = angles_ranges_intensities[i].second.first;
+                filtered_intensities[angle_index] = angles_ranges_intensities[i].second.second;
             }
         }
     }
-
-    // Fill the minimum and maximum range values
-    min_max_range = std::make_pair(min_range, max_range);
-    min_max_angle = std::make_pair(angles.front(), current_angle - angle_resolution_);
 
     // Update the original vectors
     ranges = filtered_ranges;

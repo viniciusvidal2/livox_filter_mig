@@ -37,10 +37,7 @@ private:
     /// @param ranges Vector of ranges
     /// @param intensities Vector of intensities
     /// @param angles Vector of angles
-    /// @param min_max_range Min and max range values
-    /// @param min_max_angle Min and max angle values
-    void filterRangeAndIntensityVectors(std::vector<float>& ranges, std::vector<float>& intensities, std::vector<float>& angles, 
-                            std::pair<float, float>& min_max_range, std::pair<float, float>& min_max_angle);
+    void filterRangeAndIntensityVectors(std::vector<float>& ranges, std::vector<float>& intensities, std::vector<float>& angles);
 
     /// @brief Filter boat points
     /// @param p Point to be filtered
@@ -66,6 +63,7 @@ private:
     float min_intensity_; // [units]
     float max_xy_range_; // [m]
     float angle_resolution_; // [rad]
+    const float min_scan_angle_ = 0, max_scan_angle_ = 2 * M_PI; // [rad]
     // Filter flags
     bool apply_filter_, filter_range_, filter_intensity_, filter_boat_points_, publish_debug_cloud_;
     // Frames
