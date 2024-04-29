@@ -127,8 +127,13 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
         // Calculate the angle and range of the point
         // Z positive, X forward, Y left
         // 0 rad is forward (X), positive is counter-clockwise
-        const float angle = std::atan2(p_out.y(), p_out.x());
+        // Keep the angle between 0 and 2*pi
         const float range = std::sqrt(p_out.x()*p_out.x() + p_out.y()*p_out.y());
+        float angle = std::atan2(p_out.y(), p_out.x());
+        if (angle < 0.0f) 
+        {
+            angle += 2.0f*M_PI;
+        }
         
         // Fill the output laser scan candidates
         angles.emplace_back(angle);
@@ -197,7 +202,7 @@ void CloudFilter::filterRangeAndIntensityVectors(std::vector<float>& ranges, std
         std::size_t angle_index = static_cast<std::size_t>(angles_ranges_intensities[i].first / angle_resolution_);
         if (angle_index < n_readings) 
         {
-            if (angles_ranges_intensities[angle_index].first == 0.0f)
+            if (filtered_ranges[angle_index] == 0.0f)
             {
                 filtered_ranges[angle_index] = angles_ranges_intensities[i].second.first;
                 filtered_intensities[angle_index] = angles_ranges_intensities[i].second.second;
