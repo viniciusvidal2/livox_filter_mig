@@ -57,6 +57,12 @@ CloudFilter::CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, fl
         filter_boat_points_ = flags["filter_boat_points"];
         filter_intensity_ = flags["filter_intensity"];
     }
+
+    // Debug publishers
+    debug_pub_intensity_filter_pct_ = nh.advertise<std_msgs::Float32>("/debug/intensity_filter_pct", 1);
+    debug_pub_range_filter_pct_ = nh.advertise<std_msgs::Float32>("/debug/range_filter_pct", 1);
+    debug_pub_boat_filter_pct_ = nh.advertise<std_msgs::Float32>("/debug/boat_filter_pct", 1);
+    debug_pub_total_filter_pct_ = nh.advertise<std_msgs::Float32>("/debug/total_filter_pct", 1);
 }
 
 // Cloud callback
@@ -64,11 +70,13 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
 {
     pcl::PointCloud<PointIn>::Ptr cloud_in (new pcl::PointCloud<PointIn>());
     pcl::fromROSMsg(*cloud_msg, *cloud_in);
-
     if (cloud_in->empty()) 
     {
         return;
     }
+    
+    // Debug filter percentage values
+    float intensity_filter_pct = 0.0f, range_filter_pct = 0.0f, boat_filter_pct = 0.0f;
     
     // Output debug point cloud
     pcl::PointCloud<PointIn>::Ptr cloud_out (new pcl::PointCloud<PointIn>());
@@ -98,7 +106,8 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
         {
             if (filterBoatPoints(p)) 
             {
-            continue;
+                ++boat_filter_pct;
+                continue;
             }
         }
 
@@ -107,7 +116,8 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
         {
             if (filterRange(p)) 
             {
-            continue;
+                ++range_filter_pct;
+                continue;
             }
         }
 
@@ -116,7 +126,8 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
         {
             if (filterIntensity(p)) 
             {
-            continue;
+                ++intensity_filter_pct;
+                continue;
             }
         }
 
@@ -179,6 +190,17 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
             out_scan_pub_.publish(scan_out);
         }
     }
+
+    // Publish the debug filter percentage values
+    std_msgs::Float32 pct_msg;
+    pct_msg.data = 100.0f*intensity_filter_pct/static_cast<float>(cloud_in->points.size());
+    debug_pub_intensity_filter_pct_.publish(pct_msg);
+    pct_msg.data = 100.0f*range_filter_pct/static_cast<float>(cloud_in->points.size());
+    debug_pub_range_filter_pct_.publish(pct_msg);
+    pct_msg.data = 100.0f*boat_filter_pct/static_cast<float>(cloud_in->points.size());
+    debug_pub_boat_filter_pct_.publish(pct_msg);
+    pct_msg.data = 100.0f*(intensity_filter_pct + range_filter_pct + boat_filter_pct)/static_cast<float>(cloud_in->points.size());
+    debug_pub_total_filter_pct_.publish(pct_msg);
 }
 
 void CloudFilter::filterRangeAndIntensityVectors(std::vector<float>& ranges, std::vector<float>& intensities, std::vector<float>& angles) 

@@ -7,6 +7,7 @@
 
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/LaserScan.h>
+#include <std_msgs/Float32.h>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
@@ -70,5 +71,9 @@ private:
     std::string in_frame_, out_frame_;
     float x_in_out_, y_in_out_, z_in_out_, roll_in_out_, pitch_in_out_, yaw_in_out_;
     Eigen::Matrix4f out_T_in_;
+
+    // Debug publishers
+    ros::Publisher debug_pub_intensity_filter_pct_, debug_pub_range_filter_pct_, debug_pub_boat_filter_pct_;
+    ros::Publisher debug_pub_total_filter_pct_;
 };
 #endif // CLOUDFILTER_H

@@ -11,6 +11,8 @@
 #include <Eigen/Core>
 
 #include <sensor_msgs/LaserScan.h>
+#include <geometry_msgs/Point32.h>
+#include <std_msgs/Bool.h>
 
 #ifndef LASERSCANFILTER_H
 #define LASERSCANFILTER_H
@@ -40,6 +42,10 @@ private:
     /// @return transformed scan message
     sensor_msgs::LaserScan transformScan(const sensor_msgs::LaserScan& scan_msg);
 
+    /// @brief Publish the closest reading to the boat plus the respective angle
+    /// @param[in] scan: input scan message
+    void publishClosestReading(const sensor_msgs::LaserScan& scan);
+
     // Filtered point cloud publisher
     ros::Publisher merged_scan_pub_;
     // Raw point cloud subscriber
@@ -52,5 +58,9 @@ private:
     std::string ping_frame_, scan_frame_;
     float scan_x_ping_, scan_y_ping_, scan_z_ping_, scan_roll_ping_, scan_pitch_ping_, scan_yaw_ping_;
     Eigen::Matrix4f scan_T_ping_;
+
+    // Debug publishers
+    ros::Publisher debug_pub_size_readings_, debug_pub_livox_on_, debug_pub_ping_on_;
+    ros::Publisher debug_pub_closest_reading_;
 };
 #endif // LASERSCANFILTER_H

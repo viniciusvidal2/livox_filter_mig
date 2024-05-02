@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
     pcl_ros
     tf2_ros
     pcl_conversions
+    geometry_msgs
 )
 
 catkin_package(

@@ -31,6 +31,12 @@ LaserScanFilter::LaserScanFilter(ros::NodeHandle &nh, std::unordered_map<std::st
                     scan_R_ping(1, 0), scan_R_ping(1, 1), scan_R_ping(1, 2), scan_y_ping_,
                     scan_R_ping(2, 0), scan_R_ping(2, 1), scan_R_ping(2, 2), scan_z_ping_,
                     0.0, 0.0, 0.0, 1.0;
+
+    // Debug publishers
+    debug_pub_size_readings_ = nh.advertise<geometry_msgs::Point32>("/debug/readings_size", 1);
+    debug_pub_livox_on_ = nh.advertise<std_msgs::Bool>("/debug/livox_on", 1);
+    debug_pub_ping_on_ = nh.advertise<std_msgs::Bool>("/debug/ping_on", 1);
+    debug_pub_closest_reading_ = nh.advertise<geometry_msgs::Point32>("/debug/closest_reading", 1);
 }
 
 void LaserScanFilter::pingCallback(const sensor_msgs::LaserScanConstPtr &ping_msg)
@@ -45,6 +51,11 @@ void LaserScanFilter::pingCallback(const sensor_msgs::LaserScanConstPtr &ping_ms
         ping_queue_.erase(ping_queue_.begin());
         ping_queue_.emplace_back(*ping_msg);
     }
+
+    // Publish the debug message to show that ping is on
+    std_msgs::Bool ping_on;
+    ping_on.data = true;
+    debug_pub_ping_on_.publish(ping_on);
 }
 
 void LaserScanFilter::livoxCallback(const sensor_msgs::LaserScanConstPtr &livox_msg)
@@ -63,7 +74,19 @@ void LaserScanFilter::livoxCallback(const sensor_msgs::LaserScanConstPtr &livox_
             // Add the ranges and intensities of the ping to the livox scan
             mergeScans(transformed_ping, *livox_msg, output_msg);
         }
+        // Get the size of the readings to publish for debug
+        geometry_msgs::Point32 readings_size;
+        readings_size.x = ping_msg.ranges.size();
+        readings_size.y = livox_msg->ranges.size();
+        debug_pub_size_readings_.publish(readings_size);
     }
+
+    // Publish the debug message to show that livox is on
+    std_msgs::Bool livox_on;
+    livox_on.data = true;
+    debug_pub_livox_on_.publish(livox_on);
+    // Publish the closest reading debug message
+    publishClosestReading(output_msg);
 
     // Publish the merged scan
     merged_scan_pub_.publish(output_msg);
@@ -128,4 +151,24 @@ void LaserScanFilter::mergeScans(const sensor_msgs::LaserScan& ping_msg, const s
         }
         output_msg.ranges[i] = ranges.size() > 0 ? *std::min_element(ranges.begin(), ranges.end()) : 0.0f;
     }
+}
+
+void LaserScanFilter::publishClosestReading(const sensor_msgs::LaserScan& scan)
+{
+    // Find the closest reading with respective angle
+    float closest_reading = std::numeric_limits<float>::max();
+    float closest_angle = 0.0; // [rad]
+    for (std::size_t i = 0; i < scan.ranges.size(); ++i)
+    {
+        if (scan.ranges[i] < closest_reading)
+        {
+            closest_reading = scan.ranges[i];
+            closest_angle = scan.angle_min + static_cast<float>(i)*scan.angle_increment;
+        }
+    }
+    // Publish the closest reading
+    geometry_msgs::Point32 closest_reading_msg;
+    closest_reading_msg.x = closest_reading;
+    closest_reading_msg.y = closest_angle*180.0/M_PI; // [deg]
+    debug_pub_closest_reading_.publish(closest_reading_msg);
 }
