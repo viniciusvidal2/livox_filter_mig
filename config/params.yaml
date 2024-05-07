@@ -1,8 +1,8 @@
 raw_cloud_filter:
     apply_filter: true
-    filter_boat_points: false
-    filter_range: false
-    filter_intensity: false
+    filter_boat_points: true
+    filter_range: true
+    filter_intensity: true
     debug_cloud: true
 
     boat_length: 3.0 # meters
