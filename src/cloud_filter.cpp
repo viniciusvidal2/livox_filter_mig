@@ -183,8 +183,8 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
             scan_out.angle_min = min_scan_angle_;
             scan_out.angle_max = max_scan_angle_;
             scan_out.angle_increment = angle_resolution_;
-            scan_out.range_min = filter_boat_points_ ? negative_range_.y : 0.0f;
-            scan_out.range_max = filter_range_ ? max_xy_range_ : 100.0f;
+            scan_out.range_min = *std::min_element(ranges.begin(), ranges.end());
+            scan_out.range_max = *std::max_element(ranges.begin(), ranges.end());
             scan_out.ranges = ranges;
             scan_out.intensities = intensities;
             out_scan_pub_.publish(scan_out);
@@ -229,6 +229,15 @@ void CloudFilter::filterRangeAndIntensityVectors(std::vector<float>& ranges, std
                 filtered_ranges[angle_index] = angles_ranges_intensities[i].second.first;
                 filtered_intensities[angle_index] = angles_ranges_intensities[i].second.second;
             }
+        }
+    }
+
+    // Fix the zero readings with very high value
+    for (std::size_t i = 0; i < n_readings; ++i) 
+    {
+        if (filtered_ranges[i] == 0.0f) 
+        {
+            filtered_ranges[i] = 1e6f;
         }
     }
 
