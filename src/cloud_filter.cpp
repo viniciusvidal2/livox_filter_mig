@@ -25,9 +25,9 @@ CloudFilter::CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, fl
     x_in_out_ = params["x_in_out"];
     y_in_out_ = params["y_in_out"];
     z_in_out_ = params["z_in_out"];
-    roll_in_out_ = params["roll_in_out"];
-    pitch_in_out_ = params["pitch_in_out"];
-    yaw_in_out_ = params["yaw_in_out"];
+    roll_in_out_ = params["roll_in_out"] * M_PI / 180.0f; // [rad]
+    pitch_in_out_ = params["pitch_in_out"] * M_PI / 180.0f; // [rad]
+    yaw_in_out_ = params["yaw_in_out"] * M_PI / 180.0f; // [rad]
     // Create homogeneous matrix from the relative pose
     Eigen::Matrix3f out_R_in = (Eigen::AngleAxisf(roll_in_out_, Eigen::Vector3f::UnitX())
                         * Eigen::AngleAxisf(pitch_in_out_, Eigen::Vector3f::UnitY())
@@ -133,7 +133,7 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
 
         // Apply the relative pose transformation
         const Eigen::Vector4f p_in(p.x, p.y, p.z, 1.0);
-        const Eigen::Vector4f p_out = out_T_in_ * p_in;
+        const Eigen::Vector4f p_out(out_T_in_ * p_in);
         
         // Calculate the angle and range of the point
         // Z positive, X forward, Y left
