@@ -5,11 +5,11 @@ raw_cloud_filter:
     filter_intensity: true
     debug_cloud: true
 
-    boat_length: 3.0 # meters
-    boat_width: 2.5 # meters
+    boat_length: 1.0 # meters
+    boat_width: 1.0 # meters
     max_height: 1.5 # meters
     max_xy_range: 60.0 # meters
-    min_intensity: 5
+    min_intensity: 0
 
 pointcloud2scan:
     angle_resolution: 5.0 # degrees 
@@ -20,7 +20,7 @@ livox2scan:
     x: 0.0
     y: 0.0
     z: 0.0
-    roll: 180.0 # degrees
+    roll: 0.0 # degrees
     pitch: 0.0 # degrees
     yaw: 0.0 # degrees
 

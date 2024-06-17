@@ -47,7 +47,7 @@ CloudFilter::CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, fl
         const float max_height = params["max_height"];
         negative_range_.x = -boat_length / 2.0;
         negative_range_.y = -boat_width / 2.0;
-        negative_range_.z = -1.0;
+        negative_range_.z = 0.0;
         positive_range_.x = boat_length / 2.0;
         positive_range_.y = boat_width / 2.0;
         positive_range_.z = max_height;
