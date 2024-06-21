@@ -5,10 +5,10 @@ raw_cloud_filter:
     filter_intensity: true
     debug_cloud: true
 
-    boat_length: 1.0 # meters
-    boat_width: 1.0 # meters
-    max_height: 1.5 # meters
-    max_xy_range: 60.0 # meters
+    boat_length: 0.3 # meters
+    boat_width: 0.3 # meters
+    max_height: 0.5 # meters
+    max_xy_range: 30.0 # meters
     min_intensity: 0
 
 pointcloud2scan:
