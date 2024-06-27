@@ -5,9 +5,9 @@ raw_cloud_filter:
     filter_intensity: true
     debug_cloud: true
 
-    boat_length: 0.3 # meters
-    boat_width: 0.3 # meters
-    max_height: 0.5 # meters
+    boat_length: 0.2 # meters
+    boat_width: 0.2 # meters
+    max_height: 0.8 # meters
     max_xy_range: 30.0 # meters
     min_intensity: 0
 
