@@ -8,6 +8,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/LaserScan.h>
 #include <std_msgs/Float32.h>
+#include <geometry_msgs/Quaternion.h>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
@@ -21,12 +22,11 @@
 // Type defs for point types PCL
 typedef pcl::PointXYZI PointIn;
 
-
-class CloudFilter 
+class CloudFilter
 {
 public:
     CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, float> &params, std::unordered_map<std::string, bool> &flags,
-                std::unordered_map<std::string, std::string> &frames) ;
+                std::unordered_map<std::string, std::string> &frames);
 
     ~CloudFilter() = default;
 
@@ -38,32 +38,32 @@ private:
     /// @param ranges Vector of ranges
     /// @param intensities Vector of intensities
     /// @param angles Vector of angles
-    void filterRangeAndIntensityVectors(std::vector<float>& ranges, std::vector<float>& intensities, std::vector<float>& angles);
+    void filterRangeAndIntensityVectors(std::vector<float> &ranges, std::vector<float> &intensities, std::vector<float> &angles);
 
     /// @brief Filter boat points
     /// @param p Point to be filtered
     /// @return True if the point should be filtered out, false otherwise
-    const bool filterBoatPoints(const PointIn& p);
+    const bool filterBoatPoints(const PointIn &p);
 
     /// @brief Filter by range
     /// @param p Point to be filtered
     /// @return True if the point should be filtered out, false otherwise
-    const bool filterRange(const PointIn& p);
+    const bool filterRange(const PointIn &p);
 
     /// @brief Filter by intensity
     /// @param p Point to be filtered
     /// @return True if the point should be filtered out, false otherwise
-    const bool filterIntensity(const PointIn& p);
+    const bool filterIntensity(const PointIn &p);
 
     // Filtered point cloud publisher
     ros::Publisher debug_cloud_pub_, out_scan_pub_;
     // Raw point cloud subscriber
     ros::Subscriber cloud_sub_;
     // Filter parameters
-    pcl::PointXYZ negative_range_, positive_range_; // [m]
-    float min_intensity_; // [units]
-    float max_xy_range_; // [m]
-    float angle_resolution_; // [rad]
+    pcl::PointXYZ negative_range_, positive_range_;              // [m]
+    float min_intensity_;                                        // [units]
+    float max_xy_range_;                                         // [m]
+    float angle_resolution_;                                     // [rad]
     const float min_scan_angle_ = 0, max_scan_angle_ = 2 * M_PI; // [rad]
     // Filter flags
     bool apply_filter_, filter_range_, filter_intensity_, filter_boat_points_, publish_debug_cloud_;
@@ -73,7 +73,7 @@ private:
     Eigen::Matrix4f out_T_in_;
 
     // Debug publishers
-    ros::Publisher debug_pub_intensity_filter_pct_, debug_pub_range_filter_pct_, debug_pub_boat_filter_pct_;
+    ros::Publisher debug_pub_intensity_filter_pct_, debug_pub_range_filter_pct_, debug_pub_boat_filter_pct_, debug_pub_unified_filter_pct_;
     ros::Publisher debug_pub_total_filter_pct_;
 };
 #endif // CLOUDFILTER_H
