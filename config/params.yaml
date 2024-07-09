@@ -7,8 +7,8 @@ raw_cloud_filter:
 
     boat_length: 1.2 # meters
     boat_width: 1.4 # meters
-    max_height: 0.3 # meters - we are not going to consider this due to the inclination the boat might have
-    max_xy_range: 20.0 # meters
+    max_height: 0.3 # meters
+    max_xy_range: 100.0 # meters
     min_intensity: 10
 
 pointcloud2scan:
