@@ -258,7 +258,7 @@ const bool CloudFilter::filterBoatPoints(const PointIn& p)
 
 const bool CloudFilter::filterRange(const PointIn& p) 
 {
-    return std::sqrt(p.x * p.x + p.y * p.y) > max_xy_range_ || p.x <= 0.1;
+    return std::sqrt(p.x * p.x + p.y * p.y) > max_xy_range_;
 }
 
 const bool CloudFilter::filterIntensity(const PointIn& p) 
