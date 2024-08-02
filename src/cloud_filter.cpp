@@ -220,7 +220,7 @@ void CloudFilter::filterRangeAndIntensityVectors(std::vector<float> &ranges, std
               { return a.first < b.first; });
 
     // Filter the ranges and intensities based on the angle resolution
-    std::size_t n_readings = static_cast<std::size_t>((max_scan_angle_ - min_scan_angle_) / angle_resolution_);
+    const std::size_t n_readings = static_cast<std::size_t>((max_scan_angle_ - min_scan_angle_) / angle_resolution_);
     std::vector<float> filtered_ranges(n_readings), filtered_intensities(n_readings);
     float current_angle = min_scan_angle_;
     for (std::size_t i = 0; i < angles_ranges_intensities.size(); ++i)
@@ -228,7 +228,7 @@ void CloudFilter::filterRangeAndIntensityVectors(std::vector<float> &ranges, std
         std::size_t angle_index = static_cast<std::size_t>(angles_ranges_intensities[i].first / angle_resolution_);
         if (angle_index < n_readings)
         {
-            if (filtered_ranges[angle_index] == 0.0f)
+            if (filtered_ranges[angle_index] == 0.0f || angles_ranges_intensities[i].second.first < filtered_ranges[angle_index])
             {
                 filtered_ranges[angle_index] = angles_ranges_intensities[i].second.first;
                 filtered_intensities[angle_index] = angles_ranges_intensities[i].second.second;
