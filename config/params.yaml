@@ -15,7 +15,7 @@ pointcloud2scan:
     angle_resolution: 5.0 # degrees 
 
 livox2scan:
-    input_frame: "livox_frame"
+    input_frame: "body_frame"
     output_frame: "base_link"
     x: 0.0
     y: 0.0

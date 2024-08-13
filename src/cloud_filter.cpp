@@ -8,7 +8,7 @@ CloudFilter::CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, fl
     publish_debug_cloud_ = flags["debug_cloud"];
 
     // Subscribe to the input point cloud
-    cloud_sub_ = nh.subscribe<sensor_msgs::PointCloud2>("/livox/lidar", 1, &CloudFilter::cloudCallback, this);
+    cloud_sub_ = nh.subscribe<sensor_msgs::PointCloud2>("/cloud_registered_body", 1, &CloudFilter::cloudCallback, this);
     // Advertise the filtered point cloud
     if (publish_debug_cloud_)
     {
@@ -19,7 +19,7 @@ CloudFilter::CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, fl
     // Convertion from point cloud to scan
     angle_resolution_ = params["angle_resolution"]*M_PI/180.0f; // [rad]
 
-    // Input and and output frames variables
+    // Input and output frames variables
     in_frame_ = frames["in_frame"];
     out_frame_ = frames["out_frame"];
     x_in_out_ = params["x_in_out"];

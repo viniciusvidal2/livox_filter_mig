@@ -34,7 +34,7 @@ int main(int argc, char **argv)
   np.param("/pointcloud2scan/angle_resolution", angle_resolution, 1.0f);
   float x_in_out, y_in_out, z_in_out, roll_in_out, pitch_in_out, yaw_in_out;
   std::string in_frame, out_frame;
-  np.param("/livox2scan/input_frame", in_frame, static_cast<std::string>("livox_frame"));
+  np.param("/livox2scan/input_frame", in_frame, static_cast<std::string>("body_frame"));
   np.param("/livox2scan/output_frame", out_frame, static_cast<std::string>("base_link"));
   np.param("/livox2scan/x", x_in_out, 0.0f);
   np.param("/livox2scan/y", y_in_out, 0.0f);
