@@ -19,7 +19,7 @@ int main(int argc, char **argv)
   float scan_x_ping, scan_y_ping, scan_z_ping, scan_roll_ping, scan_pitch_ping, scan_yaw_ping;
   std::string ping_frame, scan_frame;
   np.param("/ping2scan/input_frame", ping_frame, static_cast<std::string>("ping_frame"));
-  np.param("/ping2scan/output_frame", scan_frame, static_cast<std::string>("base_link"));
+  np.param("/ping2scan/output_frame", scan_frame, static_cast<std::string>("body"));
   np.param("/ping2scan/x", scan_x_ping, 0.0f);
   np.param("/ping2scan/y", scan_y_ping, 0.0f);
   np.param("/ping2scan/z", scan_z_ping, 0.0f);

@@ -1,9 +1,6 @@
 <?xml version="1.0"?>
 
-<launch>
-    <!-- Dummy tf just to make sure we can have a link between livox_frame and base_link -->
-    <node pkg="tf" type="static_transform_publisher" name="stf0" args="0 0 0 0 0 0 livox_frame base_link 100" /> 
-   
+<launch>   
     <!-- Load the YAML file with parameters -->
     <rosparam command="load" file="$(find livox_filter_mig)/config/params.yaml"/>
 
@@ -14,5 +11,5 @@
     <node name="laser_scan_merge_node" pkg="livox_filter_mig" type="laser_scan_merge_node" output="screen"/>
 
     <!-- Launch RViz with config -->
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find livox_filter_mig)/config/rviz_config.rviz" output="screen"/>
+    <node name="rviz_lidar_filter" pkg="rviz" type="rviz" args="-d $(find livox_filter_mig)/config/rviz_config.rviz" output="screen"/>
 </launch>
