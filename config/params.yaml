@@ -10,6 +10,7 @@ raw_cloud_filter:
     max_height: 0.8 # meters
     max_xy_range: 30.0 # meters
     min_intensity: 0
+    frontal_fov: 270.0 # degrees, half to each side, centre looking forward
 
 pointcloud2scan:
     angle_resolution: 5.0 # degrees 

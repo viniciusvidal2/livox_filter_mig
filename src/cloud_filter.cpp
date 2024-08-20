@@ -41,6 +41,7 @@ CloudFilter::CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, fl
     {
         // Set the filter parameters
         min_intensity_ = params["min_intensity"];
+        frontal_fov_ = params["frontal_fov"] * M_PI / 180.0f; // [rad]
         max_xy_range_ = params["max_xy_range"];
         const float boat_length = params["boat_length"];
         const float boat_width = params["boat_width"];
@@ -138,13 +139,20 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
         // Calculate the angle and range of the point
         // Z positive, X forward, Y left
         // 0 rad is forward (X), positive is counter-clockwise
-        // Keep the angle between 0 and 2*pi
         const float range = std::sqrt(p_out.x()*p_out.x() + p_out.y()*p_out.y());
-        float angle = std::atan2(p_out.y(), p_out.x());
+        float angle = std::atan2(p_out.y(), p_out.x()); // [rad]
+
+        // Filter by frontal FOV
+        if (abs(angle) > frontal_fov_/2.0f)
+        {
+            continue;
+        }
+
+        // Keep the angle between 0 and 2*pi
         if (angle < 0.0f) 
         {
             angle += 2.0f*M_PI;
-        }
+        }        
         
         // Fill the output laser scan candidates
         angles.emplace_back(angle);
@@ -258,7 +266,7 @@ const bool CloudFilter::filterBoatPoints(const PointIn& p)
 
 const bool CloudFilter::filterRange(const PointIn& p) 
 {
-    return std::sqrt(p.x * p.x + p.y * p.y) > max_xy_range_ || p.x < 0;
+    return std::sqrt(p.x * p.x + p.y * p.y) > max_xy_range_;
 }
 
 const bool CloudFilter::filterIntensity(const PointIn& p) 

@@ -30,6 +30,8 @@ int main(int argc, char **argv)
   np.param("/raw_cloud_filter/max_xy_range", max_xy_range, 1000.0f);
   float min_intensity;
   np.param("/raw_cloud_filter/min_intensity", min_intensity, 0.0f);
+  float frontal_fov;
+  np.param("/raw_cloud_filter/frontal_fov", frontal_fov, 270.0f); // [deg]
   float angle_resolution; // [deg]
   np.param("/pointcloud2scan/angle_resolution", angle_resolution, 1.0f);
   float x_in_out, y_in_out, z_in_out, roll_in_out, pitch_in_out, yaw_in_out;
@@ -54,6 +56,7 @@ int main(int argc, char **argv)
   ROS_INFO("Max height: %.2f meters", max_height);
   ROS_INFO("Max XY range: %.2f meters", max_xy_range);
   ROS_INFO("Min intensity: %.2f units", min_intensity);
+  ROS_INFO("Frontal FOV: %.2f degrees", frontal_fov);
   ROS_INFO("Angle resolution: %.2f degrees", angle_resolution);
   ROS_INFO("Relative pose: %s -> %s", in_frame.c_str(), out_frame.c_str());
   ROS_INFO("x: %.2f, y: %.2f, z: %.2f, roll: %.2f, pitch: %.2f, yaw: %.2f", x_in_out, y_in_out, z_in_out, roll_in_out, pitch_in_out, yaw_in_out);
@@ -65,6 +68,7 @@ int main(int argc, char **argv)
   params["max_height"] = max_height;
   params["max_xy_range"] = max_xy_range;
   params["min_intensity"] = min_intensity;
+  params["frontal_fov"] = frontal_fov;
   params["angle_resolution"] = angle_resolution;
   params["x_in_out"] = x_in_out;
   params["y_in_out"] = y_in_out;

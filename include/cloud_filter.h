@@ -64,6 +64,7 @@ private:
     float min_intensity_; // [units]
     float max_xy_range_; // [m]
     float angle_resolution_; // [rad]
+    float frontal_fov_; // [rad]
     const float min_scan_angle_ = 0, max_scan_angle_ = 2 * M_PI; // [rad]
     // Filter flags
     bool apply_filter_, filter_range_, filter_intensity_, filter_boat_points_, publish_debug_cloud_;
