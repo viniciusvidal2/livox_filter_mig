@@ -8,7 +8,7 @@ CloudFilter::CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, fl
     publish_debug_cloud_ = flags["debug_cloud"];
 
     // Subscribe to the input point cloud
-    cloud_sub_ = nh.subscribe<sensor_msgs::PointCloud2>("/cloud_registered_body", 1, &CloudFilter::cloudCallback, this);
+    cloud_sub_ = nh.subscribe<sensor_msgs::PointCloud2>("/localization/obstacle_ptc_lidar_frame", 1, &CloudFilter::cloudCallback, this);
     // Advertise the filtered point cloud
     if (publish_debug_cloud_)
     {
