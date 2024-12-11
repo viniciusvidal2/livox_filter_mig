@@ -1,13 +1,13 @@
 raw_cloud_filter:
     apply_filter: true
-    filter_boat_points: true
+    filter_rover_points: true
     filter_range: true
     filter_intensity: true
     debug_cloud: true
 
-    boat_length: 0.2 # meters
-    boat_width: 0.2 # meters
-    max_height: 0.8 # meters
+    rover_lengh: 0.2 # meters
+    rover_width: 0.2 # meters
+    livox_height_from_floor: 0.8 # meters
     max_xy_range: 30.0 # meters
     min_intensity: 0
     frontal_fov: 270.0 # degrees, half to each side, centre looking forward
@@ -21,7 +21,7 @@ livox2scan:
     x: 0.0
     y: 0.0
     z: 0.0
-    roll: 0.0 # degrees
+    roll: 180.0 # degrees
     pitch: 0.0 # degrees
     yaw: 0.0 # degrees
 

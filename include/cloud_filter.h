@@ -40,10 +40,10 @@ private:
     /// @param angles Vector of angles
     void filterRangeAndIntensityVectors(std::vector<float>& ranges, std::vector<float>& intensities, std::vector<float>& angles);
 
-    /// @brief Filter boat points
+    /// @brief Filter rover points
     /// @param p Point to be filtered
     /// @return True if the point should be filtered out, false otherwise
-    const bool filterBoatPoints(const PointIn& p);
+    const bool filterRoverPoints(const PointIn& p);
 
     /// @brief Filter by range
     /// @param p Point to be filtered
@@ -67,14 +67,14 @@ private:
     float frontal_fov_; // [rad]
     const float min_scan_angle_ = 0, max_scan_angle_ = 2 * M_PI; // [rad]
     // Filter flags
-    bool apply_filter_, filter_range_, filter_intensity_, filter_boat_points_, publish_debug_cloud_;
+    bool apply_filter_, filter_range_, filter_intensity_, filter_rover_points_, publish_debug_cloud_;
     // Frames
     std::string in_frame_, out_frame_;
     float x_in_out_, y_in_out_, z_in_out_, roll_in_out_, pitch_in_out_, yaw_in_out_;
     Eigen::Matrix4f out_T_in_;
 
     // Debug publishers
-    ros::Publisher debug_pub_intensity_filter_pct_, debug_pub_range_filter_pct_, debug_pub_boat_filter_pct_;
+    ros::Publisher debug_pub_intensity_filter_pct_, debug_pub_range_filter_pct_, debug_pub_rover_filter_pct_;
     ros::Publisher debug_pub_total_filter_pct_;
 };
 #endif // CLOUDFILTER_H

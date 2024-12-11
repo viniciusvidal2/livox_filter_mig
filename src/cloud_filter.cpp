@@ -43,26 +43,28 @@ CloudFilter::CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, fl
         min_intensity_ = params["min_intensity"];
         frontal_fov_ = params["frontal_fov"] * M_PI / 180.0f; // [rad]
         max_xy_range_ = params["max_xy_range"];
-        const float boat_length = params["boat_length"];
-        const float boat_width = params["boat_width"];
-        const float max_height = params["max_height"];
-        negative_range_.x = -boat_length / 2.0;
-        negative_range_.y = -boat_width / 2.0;
-        negative_range_.z = 0.5;
-        positive_range_.x = boat_length / 2.0;
-        positive_range_.y = boat_width / 2.0;
-        positive_range_.z = max_height;
+        const float rover_lengh = params["rover_lengh"];
+        const float rover_width = params["rover_width"];
+        const float livox_height_from_floor = params["livox_height_from_floor"];
+        // The offsets are in the rover body frame
+        // X forward, Y left, Z up
+        negative_range_.x = -rover_lengh / 2.0;
+        negative_range_.y = -rover_width / 2.0;
+        negative_range_.z = livox_height_from_floor;
+        positive_range_.x = rover_lengh / 2.0;
+        positive_range_.y = rover_width / 2.0;
+        positive_range_.z = 0.5;
 
         // Set the filter flags
         filter_range_ = flags["filter_range"];
-        filter_boat_points_ = flags["filter_boat_points"];
+        filter_rover_points_ = flags["filter_rover_points"];
         filter_intensity_ = flags["filter_intensity"];
     }
 
     // Debug publishers
     debug_pub_intensity_filter_pct_ = nh.advertise<std_msgs::Float32>("/debug/intensity_filter_pct", 1);
     debug_pub_range_filter_pct_ = nh.advertise<std_msgs::Float32>("/debug/range_filter_pct", 1);
-    debug_pub_boat_filter_pct_ = nh.advertise<std_msgs::Float32>("/debug/boat_filter_pct", 1);
+    debug_pub_rover_filter_pct_ = nh.advertise<std_msgs::Float32>("/debug/rover_filter_pct", 1);
     debug_pub_total_filter_pct_ = nh.advertise<std_msgs::Float32>("/debug/total_filter_pct", 1);
 }
 
@@ -77,7 +79,7 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
     }
     
     // Debug filter percentage values
-    float intensity_filter_pct = 0.0f, range_filter_pct = 0.0f, boat_filter_pct = 0.0f;
+    float intensity_filter_pct = 0.0f, range_filter_pct = 0.0f, rover_filter_pct = 0.0f;
     
     // Output debug point cloud
     pcl::PointCloud<PointIn>::Ptr cloud_out (new pcl::PointCloud<PointIn>());
@@ -96,18 +98,22 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
     angles.reserve(cloud_in->points.size());
     for (const auto& p : cloud_in->points) 
     {
-        // Filter Z values that are out of possible boat collision
-        if (p.z < negative_range_.z || p.z > positive_range_.z) 
+        // Apply the relative pose transformation
+        const Eigen::Vector4f p_in(p.x, p.y, p.z, 1.0);
+        const Eigen::Vector4f p_out(out_T_in_ * p_in);
+
+        // Filter Z values that are out of possible rover collision
+        if (p_out.z() < negative_range_.z || p_out.z() > positive_range_.z) 
         {
             continue;
         }
 
-        // Filter boat points
-        if (apply_filter_ && filter_boat_points_) 
+        // Filter rover points
+        if (apply_filter_ && filter_rover_points_) 
         {
-            if (filterBoatPoints(p)) 
+            if (filterRoverPoints(p)) 
             {
-                ++boat_filter_pct;
+                ++rover_filter_pct;
                 continue;
             }
         }
@@ -131,10 +137,6 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
                 continue;
             }
         }
-
-        // Apply the relative pose transformation
-        const Eigen::Vector4f p_in(p.x, p.y, p.z, 1.0);
-        const Eigen::Vector4f p_out(out_T_in_ * p_in);
         
         // Calculate the angle and range of the point
         // Z positive, X forward, Y left
@@ -205,9 +207,9 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
     debug_pub_intensity_filter_pct_.publish(pct_msg);
     pct_msg.data = 100.0f*range_filter_pct/static_cast<float>(cloud_in->points.size());
     debug_pub_range_filter_pct_.publish(pct_msg);
-    pct_msg.data = 100.0f*boat_filter_pct/static_cast<float>(cloud_in->points.size());
-    debug_pub_boat_filter_pct_.publish(pct_msg);
-    pct_msg.data = 100.0f*(intensity_filter_pct + range_filter_pct + boat_filter_pct)/static_cast<float>(cloud_in->points.size());
+    pct_msg.data = 100.0f*rover_filter_pct/static_cast<float>(cloud_in->points.size());
+    debug_pub_rover_filter_pct_.publish(pct_msg);
+    pct_msg.data = 100.0f*(intensity_filter_pct + range_filter_pct + rover_filter_pct)/static_cast<float>(cloud_in->points.size());
     debug_pub_total_filter_pct_.publish(pct_msg);
 }
 
@@ -254,9 +256,9 @@ void CloudFilter::filterRangeAndIntensityVectors(std::vector<float>& ranges, std
     intensities = filtered_intensities;
 }
 
-const bool CloudFilter::filterBoatPoints(const PointIn& p) 
+const bool CloudFilter::filterRoverPoints(const PointIn& p) 
 {
-    // If inside a 2D box that surrounds the boat in XY plane, filter out as well
+    // If inside a 2D box that surrounds the rover in XY plane, filter out as well
     if (p.x > negative_range_.x && p.x < positive_range_.x && p.y > negative_range_.y && p.y < positive_range_.y) 
     {
         return true;

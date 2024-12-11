@@ -18,15 +18,15 @@ int main(int argc, char **argv)
   // Reading parameters
   bool apply_filter;
   np.param("/raw_cloud_filter/apply_filter", apply_filter, false);
-  bool filter_range, filter_intensity, filter_boat_points, debug_cloud;
+  bool filter_range, filter_intensity, filter_rover_points, debug_cloud;
   np.param("/raw_cloud_filter/filter_range", filter_range, false);
   np.param("/raw_cloud_filter/filter_intensity", filter_intensity, false);
-  np.param("/raw_cloud_filter/filter_boat_points", filter_boat_points, false);
+  np.param("/raw_cloud_filter/filter_rover_points", filter_rover_points, false);
   np.param("/raw_cloud_filter/debug_cloud", debug_cloud, false);
-  float boat_length, boat_width, max_height, max_xy_range;
-  np.param("/raw_cloud_filter/boat_length", boat_length, -1.0f);
-  np.param("/raw_cloud_filter/boat_width", boat_width, 1.0f);
-  np.param("/raw_cloud_filter/max_height", max_height, -1.0f);
+  float rover_lengh, rover_width, livox_height_from_floor, max_xy_range;
+  np.param("/raw_cloud_filter/rover_lengh", rover_lengh, -1.0f);
+  np.param("/raw_cloud_filter/rover_width", rover_width, 1.0f);
+  np.param("/raw_cloud_filter/livox_height_from_floor", livox_height_from_floor, -1.0f);
   np.param("/raw_cloud_filter/max_xy_range", max_xy_range, 1000.0f);
   float min_intensity;
   np.param("/raw_cloud_filter/min_intensity", min_intensity, 0.0f);
@@ -47,13 +47,13 @@ int main(int argc, char **argv)
 
   // Print parameters
   ROS_INFO("Applying filter: %s", apply_filter ? "true" : "false");
-  ROS_INFO("Filtering boat points: %s", filter_boat_points ? "true" : "false");
+  ROS_INFO("Filtering boat points: %s", filter_rover_points ? "true" : "false");
   ROS_INFO("Filtering by range: %s", filter_range ? "true" : "false");
   ROS_INFO("Filtering by intensity: %s", filter_intensity ? "true" : "false");
   ROS_INFO("Debug cloud: %s", debug_cloud ? "true" : "false");
-  ROS_INFO("Boat length: %.2f meters", boat_length);
-  ROS_INFO("Boat width: %.2f meters", boat_width);
-  ROS_INFO("Max height: %.2f meters", max_height);
+  ROS_INFO("Boat length: %.2f meters", rover_lengh);
+  ROS_INFO("Boat width: %.2f meters", rover_width);
+  ROS_INFO("Max height: %.2f meters", livox_height_from_floor);
   ROS_INFO("Max XY range: %.2f meters", max_xy_range);
   ROS_INFO("Min intensity: %.2f units", min_intensity);
   ROS_INFO("Frontal FOV: %.2f degrees", frontal_fov);
@@ -63,9 +63,9 @@ int main(int argc, char **argv)
 
   // Create a map to store the parameters
   std::unordered_map<std::string, float> params;
-  params["boat_length"] = boat_length;
-  params["boat_width"] = boat_width;
-  params["max_height"] = max_height;
+  params["rover_lengh"] = rover_lengh;
+  params["rover_width"] = rover_width;
+  params["livox_height_from_floor"] = livox_height_from_floor;
   params["max_xy_range"] = max_xy_range;
   params["min_intensity"] = min_intensity;
   params["frontal_fov"] = frontal_fov;
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
   std::unordered_map<std::string, bool> flags;
   flags["apply_filter"] = apply_filter;
   flags["filter_range"] = filter_range;
-  flags["filter_boat_points"] = filter_boat_points;
+  flags["filter_rover_points"] = filter_rover_points;
   flags["filter_intensity"] = filter_intensity;
   flags["debug_cloud"] = debug_cloud;
   std::unordered_map<std::string, std::string> frames;
