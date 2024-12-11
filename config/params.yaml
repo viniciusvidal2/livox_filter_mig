@@ -5,10 +5,10 @@ raw_cloud_filter:
     filter_intensity: true
     debug_cloud: true
 
-    rover_lengh: 0.2 # meters
-    rover_width: 0.2 # meters
-    livox_height_from_floor: 0.8 # meters
-    max_xy_range: 30.0 # meters
+    rover_lengh: 0.6 # meters
+    rover_width: 0.6 # meters
+    livox_height_from_floor: 0.75 # meters
+    max_xy_range: 15.0 # meters
     min_intensity: 0
     frontal_fov: 270.0 # degrees, half to each side, centre looking forward
 
@@ -24,13 +24,4 @@ livox2scan:
     roll: 180.0 # degrees
     pitch: 0.0 # degrees
     yaw: 0.0 # degrees
-
-ping2scan:
-    input_frame: "ping_frame"
-    output_frame: "base_link"
-    x: 0.0
-    y: 0.0
-    z: 0.0
-    roll: 0.0
-    pitch: 0.0
-    yaw: 0.0
+    
