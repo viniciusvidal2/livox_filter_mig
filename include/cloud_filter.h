@@ -43,17 +43,17 @@ private:
     /// @brief Filter rover points
     /// @param p Point to be filtered
     /// @return True if the point should be filtered out, false otherwise
-    const bool filterRoverPoints(const PointIn& p);
+    const bool filterRoverPoints(const Eigen::Vector4f& p);
 
     /// @brief Filter by range
     /// @param p Point to be filtered
     /// @return True if the point should be filtered out, false otherwise
-    const bool filterRange(const PointIn& p);
+    const bool filterRange(const Eigen::Vector4f& p);
 
     /// @brief Filter by intensity
-    /// @param p Point to be filtered
+    /// @param intensity Point intensity to assess
     /// @return True if the point should be filtered out, false otherwise
-    const bool filterIntensity(const PointIn& p);
+    const bool filterIntensity(const float intensity);
 
     // Filtered point cloud publisher
     ros::Publisher debug_cloud_pub_, out_scan_pub_;

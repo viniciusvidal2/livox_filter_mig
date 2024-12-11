@@ -111,7 +111,7 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
         // Filter rover points
         if (apply_filter_ && filter_rover_points_) 
         {
-            if (filterRoverPoints(p)) 
+            if (filterRoverPoints(p_out)) 
             {
                 ++rover_filter_pct;
                 continue;
@@ -121,7 +121,7 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
         // Filter by range
         if (apply_filter_ && filter_range_) 
         {
-            if (filterRange(p)) 
+            if (filterRange(p_out)) 
             {
                 ++range_filter_pct;
                 continue;
@@ -131,7 +131,7 @@ void CloudFilter::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_ms
         // Filter by intensity
         if (apply_filter_ && filter_intensity_) 
         {
-            if (filterIntensity(p)) 
+            if (filterIntensity(p.intensity)) 
             {
                 ++intensity_filter_pct;
                 continue;
@@ -256,22 +256,22 @@ void CloudFilter::filterRangeAndIntensityVectors(std::vector<float>& ranges, std
     intensities = filtered_intensities;
 }
 
-const bool CloudFilter::filterRoverPoints(const PointIn& p) 
+const bool CloudFilter::filterRoverPoints(const Eigen::Vector4f& p) 
 {
     // If inside a 2D box that surrounds the rover in XY plane, filter out as well
-    if (p.x > negative_range_.x && p.x < positive_range_.x && p.y > negative_range_.y && p.y < positive_range_.y) 
+    if (p.x() > negative_range_.x && p.x() < positive_range_.x && p.y() > negative_range_.y && p.y() < positive_range_.y) 
     {
         return true;
     }
     return false;
 }
 
-const bool CloudFilter::filterRange(const PointIn& p) 
+const bool CloudFilter::filterRange(const Eigen::Vector4f& p) 
 {
-    return std::sqrt(p.x * p.x + p.y * p.y) > max_xy_range_;
+    return p.head<2>().norm() > max_xy_range_;
 }
 
-const bool CloudFilter::filterIntensity(const PointIn& p) 
-{
-    return p.intensity < min_intensity_;
+const bool CloudFilter::filterIntensity(const float intensity) 
+{ 
+    return intensity < min_intensity_;
 }
