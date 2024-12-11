@@ -16,7 +16,7 @@ pointcloud2scan:
     angle_resolution: 5.0 # degrees 
 
 livox2scan:
-    input_frame: "body"
+    input_frame: "livox_frame"
     output_frame: "body"
     x: 0.0
     y: 0.0
@@ -24,4 +24,3 @@ livox2scan:
     roll: 180.0 # degrees
     pitch: 0.0 # degrees
     yaw: 0.0 # degrees
-    
