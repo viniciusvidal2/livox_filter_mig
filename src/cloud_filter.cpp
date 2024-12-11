@@ -12,9 +12,9 @@ CloudFilter::CloudFilter(ros::NodeHandle &nh, std::unordered_map<std::string, fl
     // Advertise the filtered point cloud
     if (publish_debug_cloud_)
     {
-        debug_cloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/livox/lidar_cloud_debug", 1);
+        debug_cloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/obstacle_avoidance/lidar_cloud_debug", 1);
     }
-    out_scan_pub_ = nh.advertise<sensor_msgs::LaserScan>("/livox/scan", 1);
+    out_scan_pub_ = nh.advertise<sensor_msgs::LaserScan>("/obstacle_avoidance/obstacles_scan", 1);
 
     // Convertion from point cloud to scan
     angle_resolution_ = params["angle_resolution"]*M_PI/180.0f; // [rad]

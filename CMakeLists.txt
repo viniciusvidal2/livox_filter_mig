@@ -30,7 +30,3 @@ include_directories(
 add_executable(filter_raw_cloud_node src/filter_raw_livox_cloud_node.cpp src/cloud_filter.cpp)
 target_link_libraries(filter_raw_cloud_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(filter_raw_cloud_node ${catkin_EXPORTED_TARGETS})
-
-add_executable(laser_scan_merge_node src/laser_scan_merge_node.cpp src/laser_scan_filter.cpp)
-target_link_libraries(laser_scan_merge_node ${catkin_LIBRARIES})
-add_dependencies(laser_scan_merge_node ${catkin_EXPORTED_TARGETS})
